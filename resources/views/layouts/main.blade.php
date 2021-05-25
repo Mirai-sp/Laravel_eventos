@@ -59,6 +59,13 @@
         </nav>
       </header>
       <main>
+      @error('nouid')
+      <div class="container-fluid">
+          <div class="row">            
+              <p class="error_msg">{{ $message }}</p>                        
+          </div>
+      </div>          
+      @enderror
         <div class="container-fluid">
           <div class="row">
             @if(session('msg'))

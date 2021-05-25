@@ -18,4 +18,20 @@ class Event extends Model
     public function user() {
         return $this->belongsTo(User::class);
     }
+
+    protected function validateUserHasEvent(User $user )
+	{
+		if( $user->events->contains( $this ) )
+			return true;
+		return false;
+	}
+
+
+    // public function delete( User $user )
+	// {
+	// 	if( ! $this->validateUserHasPost($user) )
+	// 		throw new DomainException('User ' . $user->name . ' does not own this post. Therefore it cannot be deleted');
+
+	// 	return parent::delete();
+	// }	
 }

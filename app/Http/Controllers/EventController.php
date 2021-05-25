@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 
 class EventController extends Controller
 {
@@ -56,8 +58,25 @@ class EventController extends Controller
     }
 
     public function show($id) {        
-        $event = Event::findOrFail($id);
+        $event = Event::findOrFail($id);                
         return view('events.show', ['event' => $event]);
         
+    }
+
+    public function destroy($id) {
+        $event = Event::findOrFail($id);       
+        // $event = Event::with('user')->findOrFail($id);               
+        // dd($event->user->contains(Auth()->user()));		
+        
+        if ($event->user->id === auth()->user()->id) {
+            $imageFile = public_path('img/events/') . $event->image;
+            if (file::exists($imageFile))
+                File::delete($imageFile);                        
+            
+            $event->delete();
+            return redirect(Route('dashboard'))->with('msg', 'O evento foi excluído com sucesso!');
+        }
+        else
+            return redirect(Route('dashboard'))->withErrors(['nouid' => 'Você não tem acesso para fazer esta exclusão']);
     }
 }
