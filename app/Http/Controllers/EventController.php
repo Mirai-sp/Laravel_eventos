@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\File;
 
 class EventController extends Controller
 {
+
+    private function uploadImage(Request $request) {
+        $requestImage = $request->image;
+        $extension    = $requestImage->extension();
+        $imageName    = md5($requestImage->getClientOriginalName() . strtotime("now")) . "." . $extension;
+        $requestImage->move(public_path('img/events'), $imageName);
+        return $imageName;
+    }
     public function index() {
         $search = request('search');
 
@@ -39,16 +47,9 @@ class EventController extends Controller
         $event->items       = $request->items;
 
         // Image Upload
-        if($request->hasFile('image') && $request->file('image')->isValid()) {
-
-            $requestImage = $request->image;
-            $extension    = $requestImage->extension();
-            $imageName    = md5($requestImage->getClientOriginalName() . strtotime("now")) . "." . $extension;
-            $requestImage->move(public_path('img/events'), $imageName);
-            $event->image = $imageName;
-
-        }
-
+        if($request->hasFile('image') && $request->file('image')->isValid())             
+            $event->image = $this->doUpload();          
+        
         $user           = auth()->user();
         $event->user_id = $user->id;
 
@@ -78,5 +79,40 @@ class EventController extends Controller
         }
         else
             return redirect(Route('dashboard'))->withErrors(['nouid' => 'Você não tem acesso para fazer esta exclusão']);
+    }
+
+    public function edit($id) {
+        $event = Event::findOrFail($id);       
+        if ($event->user->id === auth()->user()->id) {
+            return view('events.edit', ['event' => $event]);
+        }
+        else
+            return redirect(Route('dashboard'))->withErrors(['nouid' => 'Você não tem acesso para fazer esta edição']);
+    }
+
+    public function update(Request $request) {
+        $event = Event::findOrFail($request->id);
+        if ($event->user->id === auth()->user()->id) {
+            
+            $event->title       = $request->title;
+            $event->city        = $request->city;
+            $event->date        = $request->date;
+            $event->private     = $request->private;
+            $event->description = $request->description;
+            $event->items       = $request->items;            
+            // Image Upload
+            if($request->hasFile('image') && $request->file('image')->isValid()) {
+                //deletar imagem antiga
+                $imageFile = public_path('img/events/') . $event->image;
+                if (file::exists($imageFile))
+                    File::delete($imageFile); 
+                $event->image = $this->uploadImage($request);
+            }    
+            $event->save();
+            return redirect(Route('dashboard'))->with('msg', 'Evento editado com sucesso!');
+        }
+        else
+            return redirect(Route('dashboard'))->withErrors(['nouid' => 'Você não tem acesso para fazer esta edição']);
+    
     }
 }
