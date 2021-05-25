@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
-use Exception;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 
@@ -114,5 +114,26 @@ class EventController extends Controller
         else
             return redirect(Route('dashboard'))->withErrors(['nouid' => 'Você não tem acesso para fazer esta edição']);
     
+    }
+
+    public function joinEvent($id) {
+        $event = Event::findOrFail($id);
+        
+        $user = auth()->user();
+        $user->eventsAsParticipant()->attach($id);        
+
+        return redirect(Route('dashboard'))->with('msg', 'Sua presença está confirmada no evento ' . $event->title);
+
+    }
+
+    
+    public function leaveEvent($id) {
+        $event = Event::findOrFail($id);
+
+        $user = auth()->user();
+        $user->eventsAsParticipant()->detach($id);        
+
+        return redirect(Route('dashboard'))->with('msg', 'Você saiu com sucesso do evento: ' . $event->title);
+
     }
 }

@@ -19,6 +19,10 @@ class Event extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function users() {
+        return $this->belongsToMany(User::class);
+    }
+
     protected function validateUserHasEvent(User $user )
 	{
 		if( $user->events->contains( $this ) )

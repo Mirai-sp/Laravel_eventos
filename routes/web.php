@@ -20,7 +20,9 @@ Route::get('/events/create', [EventController::class, 'create'])->middleware('au
 Route::get('/events/{id}', [EventController::class, 'show'])->name('events.show');
 Route::delete('/events/{id}', [EventController::class, 'destroy'])->middleware('auth')->name('events.destroy');
 route::get('/events/edit/{id}', [EventController::class, 'edit'])->middleware('auth')->name('events.edit');
-route::put('/events/{id]', [EventController::class, 'update'])->middleware('auth')->name('events.update');
+route::put('/events/{id}', [EventController::class, 'update'])->middleware('auth')->name('events.update');
+route::post('/events/join/{id}', [EventController::class, 'joinEvent'])->middleware('auth')->name('events.join');    
+Route::delete('/events/leave/{id}', [EventController::class, 'leaveEvent'])->middleware('auth')->name('events.leave');
 Route::post('/events', [EventController::class, 'store'])->name('events.store');
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('auth')->name('dashboard');
 
