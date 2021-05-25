@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [EventController::class, 'index'])->name('index');
-Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
+Route::get('/events/create', [EventController::class, 'create'])->middleware('auth')->name('events.create');
 Route::get('/events/{id}', [EventController::class, 'show'])->name('events.show');
 Route::post('/events', [EventController::class, 'store'])->name('events.store');
 
