@@ -23,7 +23,7 @@
                 <tr>
                     <td scropt="row">{{ $loop->index + 1 }}</td>
                     <td><a href="{{ Route('events.show', $event->id) }}">{{ $event->title }}</a></td>
-                    <td>0</td>
+                    <td>{{count($event->users)}}</td>
                     <td>
                         <a href="{{Route('events.edit', $event->id)}}" class="btn btn-info edit-btn"><ion-icon name="create-outline"></ion-icon> Editar</a> 
                         <form action="{{Route('events.destroy', $event->id) }}" method="POST">

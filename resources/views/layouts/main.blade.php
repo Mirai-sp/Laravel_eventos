@@ -59,7 +59,7 @@
         </nav>
       </header>
       <main>
-      @error('nouid')
+      @error('err')
       <div class="container-fluid">
           <div class="row">            
               <p class="error_msg">{{ $message }}</p>                        

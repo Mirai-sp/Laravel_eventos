@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\event_user;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 
 class EventController extends Controller
@@ -17,6 +19,7 @@ class EventController extends Controller
         $requestImage->move(public_path('img/events'), $imageName);
         return $imageName;
     }
+
     public function index() {
         $search = request('search');
 
@@ -48,7 +51,7 @@ class EventController extends Controller
 
         // Image Upload
         if($request->hasFile('image') && $request->file('image')->isValid())             
-            $event->image = $this->doUpload();          
+            $event->image = $this->uploadImage($request);          
         
         $user           = auth()->user();
         $event->user_id = $user->id;
@@ -59,26 +62,49 @@ class EventController extends Controller
     }
 
     public function show($id) {        
-        $event = Event::findOrFail($id);                
-        return view('events.show', ['event' => $event]);
+        $event = Event::findOrFail($id);  
         
+        $user = auth()->user();
+
+        $hasUserJoined = count(event_user::where('event_id', '=', $id)->where('user_id', '=', auth()->user()->id)->get()) > 0;
+        // $hasUserJoined = false;
+
+        // if($user) {
+
+        //     $userEvents = $user->eventsAsParticipant->toArray();
+
+        //     foreach($userEvents as $userEvent) {
+        //         if($userEvent['id'] == $id) {
+        //             $hasUserJoined = true;
+        //         }
+        //     }
+
+        // }
+        
+        $eventOwner = User::where('id', $event->user_id)->first()->toArray();
+
+        return view('events.show', ['event' => $event, 'eventOwner' => $eventOwner, 'hasUserJoined' => $hasUserJoined]);      
     }
 
     public function destroy($id) {
         $event = Event::findOrFail($id);       
-        // $event = Event::with('user')->findOrFail($id);               
-        // dd($event->user->contains(Auth()->user()));		
-        
-        if ($event->user->id === auth()->user()->id) {
-            $imageFile = public_path('img/events/') . $event->image;
-            if (file::exists($imageFile))
-                File::delete($imageFile);                        
+        if (event_user::where('event_id', '=', $id)->first()->get()->isEmpty()) {
+            // $event = Event::with('user')->findOrFail($id);               
+            // dd($event->user->contains(Auth()->user()));		
             
-            $event->delete();
-            return redirect(Route('dashboard'))->with('msg', 'O evento foi excluído com sucesso!');
+            if ($event->user->id === auth()->user()->id) {
+                $imageFile = public_path('img/events/') . $event->image;
+                if (file::exists($imageFile))
+                    File::delete($imageFile);                        
+                
+                $event->delete();
+                return redirect(Route('dashboard'))->with('msg', 'O evento foi excluído com sucesso!');
+            }
+            else
+                return redirect(Route('dashboard'))->withErrors(['err' => 'Você não tem acesso para fazer esta exclusão']);
         }
-        else
-            return redirect(Route('dashboard'))->withErrors(['nouid' => 'Você não tem acesso para fazer esta exclusão']);
+        else                
+            return redirect(Route('dashboard'))->withErrors(['err' => 'Este evento já possui participante, impossível excluir.']);
     }
 
     public function edit($id) {
@@ -87,7 +113,7 @@ class EventController extends Controller
             return view('events.edit', ['event' => $event]);
         }
         else
-            return redirect(Route('dashboard'))->withErrors(['nouid' => 'Você não tem acesso para fazer esta edição']);
+            return redirect(Route('dashboard'))->withErrors(['err' => 'Você não tem acesso para fazer esta edição']);
     }
 
     public function update(Request $request) {
@@ -112,17 +138,25 @@ class EventController extends Controller
             return redirect(Route('dashboard'))->with('msg', 'Evento editado com sucesso!');
         }
         else
-            return redirect(Route('dashboard'))->withErrors(['nouid' => 'Você não tem acesso para fazer esta edição']);
+            return redirect(Route('dashboard'))->withErrors(['err' => 'Você não tem acesso para fazer esta edição']);
     
     }
 
     public function joinEvent($id) {
-        $event = Event::findOrFail($id);
+        $event    = Event::findOrFail($id);
+        $user     = auth()->user();
         
-        $user = auth()->user();
-        $user->eventsAsParticipant()->attach($id);        
+        // DB::enableQueryLog();
+        $asJoined = event_user::where('event_id', '=', $id)->where('user_id', '=', auth()->user()->id)->get();
+        
+        // dd(DB::getQueryLog());
+        if (count($asJoined) <= 0){        
+            $user->eventsAsParticipant()->attach($id);        
 
-        return redirect(Route('dashboard'))->with('msg', 'Sua presença está confirmada no evento ' . $event->title);
+            return redirect(Route('dashboard'))->with('msg', 'Sua presença está confirmada no evento ' . $event->title);
+        }
+        else
+            return redirect(Route('dashboard'))->withErrors(['err' => 'Você já esta participando deste evento ' . $event->title]);
 
     }
 
